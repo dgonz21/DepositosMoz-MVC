@@ -1,7 +1,9 @@
+﻿using DepositosMoz.Web.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddSingleton<IDatosService, DatosMemoriaService>();
 
 var app = builder.Build();
 
@@ -27,3 +29,4 @@ app.MapControllerRoute(
 
 
 app.Run();
+

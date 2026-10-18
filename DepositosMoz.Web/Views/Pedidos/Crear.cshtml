@@ -1,0 +1,359 @@
+@model DepositosMoz.Web.ViewModels.PedidoCrearViewModel
+
+@{
+    ViewData["Title"] = "Registrar pedido";
+}
+
+<div class="mb-4">
+    <h2>Registrar pedido</h2>
+    <p class="text-muted">
+        Ingresa los datos del nuevo pedido.
+    </p>
+</div>
+
+<form asp-controller="Pedidos"
+      asp-action="Crear"
+      method="post">
+
+    <div asp-validation-summary="ModelOnly"
+         class="text-danger mb-3">
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">
+            Cliente
+        </label>
+
+        <input type="hidden"
+               asp-for="ClienteId"
+               id="ClienteId" />
+
+        <input type="text"
+               id="ClienteNombre"
+               class="form-control"
+               list="listaClientes"
+               placeholder="Escribe o selecciona el nombre del cliente"
+               autocomplete="off" />
+
+        <datalist id="listaClientes">
+            @foreach (var cliente in ViewBag.Clientes)
+            {
+                <option value="@cliente.Text"
+                        data-id="@cliente.Value">
+                </option>
+            }
+        </datalist>
+
+        <span asp-validation-for="ClienteId"
+              class="text-danger">
+        </span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="FechaEntrega"
+               class="form-label">
+            Fecha y hora de entrega
+        </label>
+
+        <input asp-for="FechaEntrega"
+               type="datetime-local"
+               class="form-control" />
+
+        <span asp-validation-for="FechaEntrega"
+              class="text-danger">
+        </span>
+    </div>
+
+    <div class="mb-4">
+        <label asp-for="Observaciones"
+               class="form-label">
+            Observaciones
+        </label>
+
+        <textarea asp-for="Observaciones"
+                  class="form-control"
+                  rows="3"
+                  placeholder="Observaciones adicionales del pedido"></textarea>
+
+        <span asp-validation-for="Observaciones"
+              class="text-danger">
+        </span>
+    </div>
+
+
+    <div class="mb-3">
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+
+            <h4 class="mb-0">
+                Productos del pedido
+            </h4>
+
+            <button type="button"
+                    id="agregarProducto"
+                    class="btn btn-outline-primary btn-sm">
+                + Agregar producto
+            </button>
+
+        </div>
+
+        <div id="detallesPedido">
+
+            @for (int i = 0; i < Model.Detalles.Count; i++)
+            {
+                <div class="detalle-row border rounded p-3 mb-3">
+
+                    <div class="row">
+
+                        <!-- PRODUCTO -->
+                        <div class="col-md-8 mb-3">
+
+                            <label class="form-label">
+                                Producto
+                            </label>
+
+                            <select asp-for="Detalles[i].ProductoId"
+                                    asp-items="ViewBag.Productos"
+                                    class="form-select producto-select">
+
+                                <option value="">
+                                    -- Seleccione un producto --
+                                </option>
+
+                            </select>
+
+                            <span asp-validation-for="Detalles[i].ProductoId"
+                                  class="text-danger producto-validacion">
+                            </span>
+
+                        </div>
+
+                        <!-- CANTIDAD -->
+                        <div class="col-md-3 mb-3">
+
+                            <label class="form-label">
+                                Cantidad
+                            </label>
+
+                            <input asp-for="Detalles[i].Cantidad"
+                                   type="number"
+                                   min="1"
+                                   class="form-control cantidad-input" />
+
+                            <span asp-validation-for="Detalles[i].Cantidad"
+                                  class="text-danger cantidad-validacion">
+                            </span>
+
+                        </div>
+
+                        <!-- ELIMINAR -->
+                        <div class="col-md-1 d-flex align-items-end mb-3">
+
+                            <button type="button"
+                                    class="btn btn-outline-danger eliminar-producto">
+                                ×
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+    <!-- BOTONES -->
+    <div class="mt-4">
+
+        <button type="submit"
+                class="btn btn-primary">
+            Guardar pedido
+        </button>
+
+        <a asp-controller="Pedidos"
+           asp-action="Index"
+           class="btn btn-secondary">
+            Cancelar
+        </a>
+
+    </div>
+
+</form>
+
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+
+
+            const nombreCliente =
+                document.getElementById("ClienteNombre");
+
+            const clienteId =
+                document.getElementById("ClienteId");
+
+            const opcionesClientes =
+                document.querySelectorAll("#listaClientes option");
+
+
+            nombreCliente.addEventListener("input", function () {
+
+                clienteId.value = "";
+
+                opcionesClientes.forEach(function (opcion) {
+
+                    if (
+                        opcion.value.toLowerCase() ===
+                        nombreCliente.value.trim().toLowerCase()
+                    ) {
+
+                        clienteId.value =
+                            opcion.dataset.id;
+                    }
+
+                });
+
+            });
+
+
+
+
+            const contenedor =
+                document.getElementById("detallesPedido");
+
+            const botonAgregar =
+                document.getElementById("agregarProducto");
+
+
+            botonAgregar.addEventListener("click", function () {
+
+                const filas =
+                    contenedor.querySelectorAll(".detalle-row");
+
+                if (filas.length === 0) {
+                    return;
+                }
+
+                const nuevaFila =
+                    filas[0].cloneNode(true);
+
+
+                const nuevoSelect =
+                    nuevaFila.querySelector(".producto-select");
+
+                const nuevaCantidad =
+                    nuevaFila.querySelector(".cantidad-input");
+
+
+                nuevoSelect.value = "";
+
+                nuevaCantidad.value = 1;
+
+
+                contenedor.appendChild(nuevaFila);
+
+                actualizarIndices();
+
+            });
+
+
+
+
+            contenedor.addEventListener("click", function (event) {
+
+                if (
+                    event.target.classList.contains(
+                        "eliminar-producto"
+                    )
+                ) {
+
+                    const filas =
+                        contenedor.querySelectorAll(".detalle-row");
+
+
+                    if (filas.length > 1) {
+
+                        event.target
+                            .closest(".detalle-row")
+                            .remove();
+
+                        actualizarIndices();
+
+                    }
+
+                }
+
+            });
+
+
+
+            function actualizarIndices() {
+
+                const filas =
+                    contenedor.querySelectorAll(".detalle-row");
+
+
+                filas.forEach(function (fila, indice) {
+
+                    const select =
+                        fila.querySelector(".producto-select");
+
+                    const cantidad =
+                        fila.querySelector(".cantidad-input");
+
+                    const validacionProducto =
+                        fila.querySelector(".producto-validacion");
+
+                    const validacionCantidad =
+                        fila.querySelector(".cantidad-validacion");
+
+
+                    select.name =
+                        `Detalles[${indice}].ProductoId`;
+
+                    select.id =
+                        `Detalles_${indice}__ProductoId`;
+
+
+                    cantidad.name =
+                        `Detalles[${indice}].Cantidad`;
+
+                    cantidad.id =
+                        `Detalles_${indice}__Cantidad`;
+
+
+                    if (validacionProducto) {
+
+                        validacionProducto.setAttribute(
+                            "data-valmsg-for",
+                            `Detalles[${indice}].ProductoId`
+                        );
+
+                    }
+
+
+                    if (validacionCantidad) {
+
+                        validacionCantidad.setAttribute(
+                            "data-valmsg-for",
+                            `Detalles[${indice}].Cantidad`
+                        );
+
+                    }
+
+                });
+
+            }
+
+        });
+
+    </script>
+}

@@ -1,8 +1,81 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Inicio";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container py-4">
+
+    <div class="bg-dark text-white rounded-4 p-4 p-md-5 mb-4">
+        <h1 class="display-5 fw-bold">Depósitos Moz</h1>
+        <p class="lead mb-0">
+            Sistema de gestión de clientes, productos y pedidos.
+        </p>
+    </div>
+
+    <div class="mb-4">
+        <h2 class="fw-bold">Panel de administración</h2>
+        <p class="text-muted">
+            Seleccioná el módulo que querés administrar.
+        </p>
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h3 class="h4">Clientes</h3>
+                    <p class="text-muted">
+                        Registrá nuevos clientes y consultá
+                        sus datos.
+                    </p>
+                    <a asp-controller="Clientes"
+                       asp-action="Index"
+                       class="btn btn-primary">
+                        Administrar clientes
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h3 class="h4">Productos</h3>
+                    <p class="text-muted">
+                        Consultá el catálogo, los precios
+                        y las existencias.
+                    </p>
+                    <a asp-controller="Productos"
+                       asp-action="Index"
+                       class="btn btn-primary">
+                        Administrar productos
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h3 class="h4">Pedidos</h3>
+                    <p class="text-muted">
+                        Registrá pedidos y consultá
+                        sus estados de entrega.
+                    </p>
+                    <a asp-controller="Pedidos"
+                       asp-action="Index"
+                       class="btn btn-primary">
+                        Administrar pedidos
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="alert alert-info mt-5">
+        <strong>Bienvenido a Depósitos Moz.</strong>
+        Utilizá el menú superior para navegar entre los módulos.
+    </div>
+
 </div>

@@ -1,0 +1,94 @@
+@model IEnumerable<DepositosMoz.Web.DTOs.PedidoResumenDto>
+
+@{
+    ViewData["Title"] = "Pedidos";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Pedidos</h2>
+
+    <a asp-controller="Pedidos"
+       asp-action="Crear"
+       class="btn btn-primary">
+        + Nuevo pedido
+    </a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        No hay pedidos registrados.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>N.º Pedido</th>
+                    <th>Cliente</th>
+                    <th>Fecha de entrega</th>
+                    <th>Estado</th>
+                    <th>Total</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var pedido in Model)
+                {
+                    <tr>
+                        <td>@pedido.Id</td>
+                        <td>@pedido.NombreCliente</td>
+                        <td>@pedido.FechaEntrega.ToString("dd/MM/yyyy")</td>
+
+                        <td>
+                            @if (pedido.Estado == "Pendiente")
+                            {
+                                <span class="badge bg-warning text-dark">
+                                    Pendiente
+                                </span>
+                            }
+                            else if (pedido.Estado == "En preparación")
+                            {
+                                <span class="badge bg-info text-dark">
+                                    En preparación
+                                </span>
+                            }
+                            else if (pedido.Estado == "Listo para entrega")
+                            {
+                                <span class="badge bg-primary">
+                                    Listo para entrega
+                                </span>
+                            }
+                            else if (pedido.Estado == "Entregado")
+                            {
+                                <span class="badge bg-success">
+                                    Entregado
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">
+                                    @pedido.Estado
+                                </span>
+                            }
+                        </td>
+
+                        <td>@pedido.Total.ToString("C2")</td>
+
+                        <td>
+                            <a asp-controller="Pedidos"
+                               asp-action="Detalle"
+                               asp-route-id="@pedido.Id"
+                               class="btn btn-sm btn-outline-primary">
+                                Ver detalle
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

@@ -86,5 +86,25 @@ public class ConsultasPersistenciaTests
 
         var reporte = await consultas.ReporteProductosVendidosAsync();
         Assert.NotEmpty(reporte);
+
+        // JOIN avanzado de cinco tablas
+        var detalleCompleto = await consultas.DetalleCompletoPedidosAsync();
+        Assert.Single(detalleCompleto);
+
+        var registro = detalleCompleto[0];
+        var tipo = registro.GetType();
+
+        Assert.Equal(
+            "Cliente LINQ",
+            tipo.GetProperty("Cliente")!.GetValue(registro));
+
+        Assert.Equal(
+            "Producto LINQ",
+            tipo.GetProperty("Producto")!.GetValue(registro));
+
+        Assert.Equal(
+            37.50m,
+            tipo.GetProperty("Subtotal")!.GetValue(registro));
     }
 }
+

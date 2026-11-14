@@ -1,4 +1,4 @@
-using DepositosMoz.Web.Data;
+﻿using DepositosMoz.Web.Data;
 using DepositosMoz.Web.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -117,4 +117,35 @@ public class ConsultasMoz
 
         return datos.Cast<object>().ToList();
     }
+
+    // 4.6 Consulta avanzada: relacion entre cinco tablas
+    public async Task<List<object>> DetalleCompletoPedidosAsync()
+    {
+        var datos = await (
+            from pedido in _db.Pedidos
+            join cliente in _db.Clientes
+                on pedido.ClienteId equals cliente.Id
+            join estado in _db.EstadosPedido
+                on pedido.EstadoPedidoId equals estado.Id
+            join detalle in _db.DetallesPedido
+                on pedido.Id equals detalle.PedidoId
+            join producto in _db.Productos
+                on detalle.ProductoId equals producto.Id
+            orderby pedido.FechaPedido descending
+            select new
+            {
+                PedidoId = pedido.Id,
+                Cliente = cliente.Nombre,
+                Estado = estado.Nombre,
+                Producto = producto.Nombre,
+                Cantidad = detalle.Cantidad,
+                PrecioUnitario = detalle.PrecioUnitario,
+                Subtotal = detalle.Cantidad * detalle.PrecioUnitario,
+                FechaPedido = pedido.FechaPedido
+            }
+        ).ToListAsync();
+
+        return datos.Cast<object>().ToList();
+    }
 }
+

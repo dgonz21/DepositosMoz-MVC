@@ -138,3 +138,22 @@ public class PedidoService : IPedidoService
 
     await _repositorioPedido.AgregarAsync(pedido);
 }
+public async Task<bool> CambiarEstadoPedidoAsync(
+    int id,
+    int estadoId)
+{
+    var pedido =
+        await _repositorioPedido.ObtenerPorIdAsync(id);
+
+    if (pedido == null)
+    {
+        return false;
+    }
+
+    pedido.EstadoPedidoId = estadoId;
+
+    await _repositorioPedido.ActualizarAsync(pedido);
+
+    return true;
+}
+}

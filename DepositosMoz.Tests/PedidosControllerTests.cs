@@ -1,28 +1,46 @@
-﻿using DepositosMoz.Web.Controllers;
+using DepositosMoz.Web.Controllers;
+using DepositosMoz.Web.Data;
 using DepositosMoz.Web.DTOs;
 using DepositosMoz.Web.Models;
+using DepositosMoz.Web.Queries;
+using DepositosMoz.Web.Repositories;
 using DepositosMoz.Web.Services;
 using DepositosMoz.Web.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 
 namespace DepositosMoz.Tests;
 
 public class PedidosControllerTests
 {
     [Fact]
-    public void Index_RetornaVistaConListaDePedidos()
+    public async Task Index_RetornaVistaConListaDePedidos()
     {
-        // Arrange
-        var servicio = new DatosMemoriaService();
-        var controller = new PedidosController(servicio);
+        using var conexion =
+            new SqliteConnection("Data Source=:memory:");
 
-        // Act
-        var resultado = controller.Index();
+        await conexion.OpenAsync();
 
-        // Assert
-        var vista = Assert.IsType<ViewResult>(resultado);
+        var opciones =
+            new DbContextOptionsBuilder<DepositosMozDbContext>()
+                .UseSqlite(conexion)
+                .Options;
+
+        await using var db =
+            new DepositosMozDbContext(opciones);
+
+        await db.Database.EnsureCreatedAsync();
+
+        var controller = CrearController(db);
+
+        var resultado =
+            await controller.Index();
+
+        var vista =
+            Assert.IsType<ViewResult>(resultado);
 
         var modelo =
             Assert.IsAssignableFrom<IEnumerable<PedidoResumenDto>>(
@@ -32,17 +50,30 @@ public class PedidosControllerTests
     }
 
     [Fact]
-    public void Crear_Get_RetornaVistaConModelo()
+    public async Task Crear_Get_RetornaVistaConModelo()
     {
-        // Arrange
-        var servicio = new DatosMemoriaService();
-        var controller = new PedidosController(servicio);
+        using var conexion =
+            new SqliteConnection("Data Source=:memory:");
 
-        // Act
-        var resultado = controller.Crear();
+        await conexion.OpenAsync();
 
-        // Assert
-        var vista = Assert.IsType<ViewResult>(resultado);
+        var opciones =
+            new DbContextOptionsBuilder<DepositosMozDbContext>()
+                .UseSqlite(conexion)
+                .Options;
+
+        await using var db =
+            new DepositosMozDbContext(opciones);
+
+        await db.Database.EnsureCreatedAsync();
+
+        var controller = CrearController(db);
+
+        var resultado =
+            await controller.Crear();
+
+        var vista =
+            Assert.IsType<ViewResult>(resultado);
 
         var modelo =
             Assert.IsType<PedidoCrearViewModel>(
@@ -53,20 +84,35 @@ public class PedidosControllerTests
     }
 
     [Fact]
-    public void Crear_Post_ModeloValido_AgregaPedido()
+    public async Task Crear_Post_ModeloValido_AgregaPedido()
     {
-        // Arrange
-        var servicio = new DatosMemoriaService();
+        using var conexion =
+            new SqliteConnection("Data Source=:memory:");
 
-        var cliente = CrearCliente(servicio);
-        var producto = CrearProducto(servicio);
+        await conexion.OpenAsync();
 
-        var controller = new PedidosController(servicio);
+        var opciones =
+            new DbContextOptionsBuilder<DepositosMozDbContext>()
+                .UseSqlite(conexion)
+                .Options;
+
+        await using var db =
+            new DepositosMozDbContext(opciones);
+
+        await db.Database.EnsureCreatedAsync();
+
+        var cliente =
+            await CrearClienteAsync(db);
+
+        var producto =
+            await CrearProductoAsync(db);
+
+        var controller = CrearController(db);
 
         var modelo = new PedidoCrearViewModel
         {
             ClienteId = cliente.Id,
-            FechaEntrega = DateTime.Now.AddDays(1),
+            FechaEntrega = DateTime.Today.AddDays(1),
             Observaciones = "Pedido de prueba",
 
             Detalles = new List<DetallePedidoCrearViewModel>
@@ -79,13 +125,9 @@ public class PedidosControllerTests
             }
         };
 
-        var cantidadAntes =
-            servicio.ObtenerPedidos().Count;
+        var resultado =
+            await controller.Crear(modelo);
 
-        // Act
-        var resultado = controller.Crear(modelo);
-
-        // Assert
         var redireccion =
             Assert.IsType<RedirectToActionResult>(
                 resultado);
@@ -94,31 +136,50 @@ public class PedidosControllerTests
             "Detalle",
             redireccion.ActionName);
 
-        var cantidadDespues =
-            servicio.ObtenerPedidos().Count;
+        var pedido =
+            await db.Pedidos
+                .Include(p => p.Detalles)
+                .FirstOrDefaultAsync();
+
+        Assert.NotNull(pedido);
+        Assert.Single(pedido.Detalles);
+        Assert.Equal(1, pedido.EstadoPedidoId);
 
         Assert.Equal(
-            cantidadAntes + 1,
-            cantidadDespues);
+            producto.Precio,
+            pedido.Detalles[0].PrecioUnitario);
     }
 
     [Fact]
-    public void Crear_Post_ModeloInvalido_RetornaVista()
+    public async Task Crear_Post_ModeloInvalido_RetornaVista()
     {
-        // Arrange
-        var servicio = new DatosMemoriaService();
-        var controller = new PedidosController(servicio);
+        using var conexion =
+            new SqliteConnection("Data Source=:memory:");
 
-        var modelo = new PedidoCrearViewModel();
+        await conexion.OpenAsync();
+
+        var opciones =
+            new DbContextOptionsBuilder<DepositosMozDbContext>()
+                .UseSqlite(conexion)
+                .Options;
+
+        await using var db =
+            new DepositosMozDbContext(opciones);
+
+        await db.Database.EnsureCreatedAsync();
+
+        var controller = CrearController(db);
+
+        var modelo =
+            new PedidoCrearViewModel();
 
         controller.ModelState.AddModelError(
             "ClienteId",
-            "El cliente es obligatorio.");
+            "El cliente es obligatorio");
 
-        // Act
-        var resultado = controller.Crear(modelo);
+        var resultado =
+            await controller.Crear(modelo);
 
-        // Assert
         var vista =
             Assert.IsType<ViewResult>(
                 resultado);
@@ -129,27 +190,40 @@ public class PedidosControllerTests
     }
 
     [Fact]
-    public void Detalle_PedidoExistente_RetornaVista()
+    public async Task Detalle_PedidoExistente_RetornaVista()
     {
-        // Arrange
-        var servicio = new DatosMemoriaService();
+        using var conexion =
+            new SqliteConnection("Data Source=:memory:");
 
-        var cliente = CrearCliente(servicio);
-        var producto = CrearProducto(servicio);
+        await conexion.OpenAsync();
 
-        var pedido = CrearPedido(
-            servicio,
-            cliente,
-            producto);
+        var opciones =
+            new DbContextOptionsBuilder<DepositosMozDbContext>()
+                .UseSqlite(conexion)
+                .Options;
 
-        var controller =
-            new PedidosController(servicio);
+        await using var db =
+            new DepositosMozDbContext(opciones);
 
-        // Act
+        await db.Database.EnsureCreatedAsync();
+
+        var cliente =
+            await CrearClienteAsync(db);
+
+        var producto =
+            await CrearProductoAsync(db);
+
+        var pedido =
+            await CrearPedidoAsync(
+                db,
+                cliente,
+                producto);
+
+        var controller = CrearController(db);
+
         var resultado =
-            controller.Detalle(pedido.Id);
+            await controller.Detalle(pedido.Id);
 
-        // Assert
         var vista =
             Assert.IsType<ViewResult>(
                 resultado);
@@ -161,53 +235,79 @@ public class PedidosControllerTests
         Assert.Equal(
             pedido.Id,
             modelo.Id);
+
+        Assert.Single(modelo.Detalles);
     }
 
     [Fact]
-    public void Detalle_PedidoNoExiste_RetornaNotFound()
+    public async Task Detalle_PedidoNoExiste_RetornaNotFound()
     {
-        // Arrange
-        var servicio = new DatosMemoriaService();
-        var controller = new PedidosController(servicio);
+        using var conexion =
+            new SqliteConnection("Data Source=:memory:");
 
-        // Act
+        await conexion.OpenAsync();
+
+        var opciones =
+            new DbContextOptionsBuilder<DepositosMozDbContext>()
+                .UseSqlite(conexion)
+                .Options;
+
+        await using var db =
+            new DepositosMozDbContext(opciones);
+
+        await db.Database.EnsureCreatedAsync();
+
+        var controller = CrearController(db);
+
         var resultado =
-            controller.Detalle(99999);
+            await controller.Detalle(99999);
 
-        // Assert
         Assert.IsType<NotFoundResult>(
             resultado);
     }
 
     [Fact]
-    public void CambiarEstado_EstadoValido_ActualizaPedido()
+    public async Task CambiarEstado_EstadoValido_ActualizaPedido()
     {
-        // Arrange
-        var servicio = new DatosMemoriaService();
+        using var conexion =
+            new SqliteConnection("Data Source=:memory:");
 
-        var cliente = CrearCliente(servicio);
-        var producto = CrearProducto(servicio);
+        await conexion.OpenAsync();
 
-        var pedido = CrearPedido(
-            servicio,
-            cliente,
-            producto);
+        var opciones =
+            new DbContextOptionsBuilder<DepositosMozDbContext>()
+                .UseSqlite(conexion)
+                .Options;
 
-        var controller =
-            new PedidosController(servicio);
+        await using var db =
+            new DepositosMozDbContext(opciones);
+
+        await db.Database.EnsureCreatedAsync();
+
+        var cliente =
+            await CrearClienteAsync(db);
+
+        var producto =
+            await CrearProductoAsync(db);
+
+        var pedido =
+            await CrearPedidoAsync(
+                db,
+                cliente,
+                producto);
+
+        var controller = CrearController(db);
 
         controller.TempData =
             new TempDataDictionary(
                 new DefaultHttpContext(),
                 new TempDataProviderFalso());
 
-        // Act
         var resultado =
-            controller.CambiarEstado(
+            await controller.CambiarEstado(
                 pedido.Id,
                 2);
 
-        // Assert
         var redireccion =
             Assert.IsType<RedirectToActionResult>(
                 resultado);
@@ -216,85 +316,173 @@ public class PedidosControllerTests
             "Detalle",
             redireccion.ActionName);
 
-        var pedidoActualizado =
-            servicio.ObtenerPedidoPorId(
-                pedido.Id);
+        db.ChangeTracker.Clear();
 
-        Assert.NotNull(pedidoActualizado);
+        var actualizado =
+            await db.Pedidos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(
+                    p => p.Id == pedido.Id);
+
+        Assert.NotNull(actualizado);
 
         Assert.Equal(
             2,
-            pedidoActualizado.EstadoPedidoId);
+            actualizado.EstadoPedidoId);
     }
 
     [Fact]
-    public void CambiarEstado_EstadoInvalido_RetornaBadRequest()
+    public async Task CambiarEstado_EstadoInvalido_RetornaBadRequest()
     {
-        // Arrange
-        var servicio = new DatosMemoriaService();
+        using var conexion =
+            new SqliteConnection("Data Source=:memory:");
 
-        var cliente = CrearCliente(servicio);
-        var producto = CrearProducto(servicio);
+        await conexion.OpenAsync();
 
-        var pedido = CrearPedido(
-            servicio,
-            cliente,
-            producto);
+        var opciones =
+            new DbContextOptionsBuilder<DepositosMozDbContext>()
+                .UseSqlite(conexion)
+                .Options;
 
-        var controller =
-            new PedidosController(servicio);
+        await using var db =
+            new DepositosMozDbContext(opciones);
 
-        // Act
+        await db.Database.EnsureCreatedAsync();
+
+        var cliente =
+            await CrearClienteAsync(db);
+
+        var producto =
+            await CrearProductoAsync(db);
+
+        var pedido =
+            await CrearPedidoAsync(
+                db,
+                cliente,
+                producto);
+
+        var controller = CrearController(db);
+
         var resultado =
-            controller.CambiarEstado(
+            await controller.CambiarEstado(
                 pedido.Id,
                 10);
 
-        // Assert
         Assert.IsType<BadRequestObjectResult>(
             resultado);
     }
 
-    private static Cliente CrearCliente(
-        DatosMemoriaService servicio)
+    private static PedidosController CrearController(
+        DepositosMozDbContext db)
     {
+        var repositorioCliente =
+            new Repositorio<Cliente>(db);
+
+        var repositorioProducto =
+            new Repositorio<Producto>(db);
+
+        var repositorioPedido =
+            new Repositorio<Pedido>(db);
+
+        var clienteService =
+            new ClienteService(
+                repositorioCliente);
+
+        var productoService =
+            new ProductoService(
+                repositorioProducto);
+
+        var consultas =
+            new ConsultasMoz(db);
+
+        var pedidoService =
+            new PedidoService(
+                repositorioPedido,
+                consultas,
+                clienteService,
+                productoService);
+
+        return new PedidosController(
+            pedidoService,
+            clienteService,
+            productoService);
+    }
+
+    private static async Task<Cliente> CrearClienteAsync(
+        DepositosMozDbContext db)
+    {
+        var repositorio =
+            new Repositorio<Cliente>(db);
+
         var cliente = new Cliente
         {
             Nombre = "Cliente prueba",
             Telefono = "7777-7777",
-            Direccion = "San Salvador"
+            Direccion = "San Salvador",
+            Activo = true
         };
 
-        servicio.AgregarCliente(cliente);
+        await repositorio.AgregarAsync(cliente);
 
         return cliente;
     }
 
-    private static Producto CrearProducto(
-        DatosMemoriaService servicio)
+    private static async Task<Producto> CrearProductoAsync(
+        DepositosMozDbContext db)
     {
+        var repositorio =
+            new Repositorio<Producto>(db);
+
         var producto = new Producto
         {
             Nombre = "Producto prueba",
             Descripcion = "Producto para pruebas",
             Precio = 2.50m,
-            Stock = 20
+            Stock = 20,
+            Activo = true
         };
 
-        servicio.AgregarProducto(producto);
+        await repositorio.AgregarAsync(producto);
 
         return producto;
     }
 
-    private static Pedido CrearPedido(
-        DatosMemoriaService servicio,
+    private static async Task<Pedido> CrearPedidoAsync(
+        DepositosMozDbContext db,
         Cliente cliente,
         Producto producto)
     {
+        var repositorioCliente =
+            new Repositorio<Cliente>(db);
+
+        var repositorioProducto =
+            new Repositorio<Producto>(db);
+
+        var repositorioPedido =
+            new Repositorio<Pedido>(db);
+
+        var clienteService =
+            new ClienteService(
+                repositorioCliente);
+
+        var productoService =
+            new ProductoService(
+                repositorioProducto);
+
+        var consultas =
+            new ConsultasMoz(db);
+
+        var pedidoService =
+            new PedidoService(
+                repositorioPedido,
+                consultas,
+                clienteService,
+                productoService);
+
         var pedido = new Pedido
         {
             ClienteId = cliente.Id,
-            FechaEntrega = DateTime.Now.AddDays(1),
+            FechaEntrega = DateTime.Today.AddDays(1),
             Observaciones = "Pedido para pruebas",
 
             Detalles = new List<DetallePedido>
@@ -307,7 +495,8 @@ public class PedidosControllerTests
             }
         };
 
-        servicio.AgregarPedido(pedido);
+        await pedidoService.CrearPedidoAsync(
+            pedido);
 
         return pedido;
     }

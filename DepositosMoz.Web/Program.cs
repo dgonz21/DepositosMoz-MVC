@@ -16,8 +16,6 @@ builder.Services.AddDbContext<DepositosMozDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DepositosMozDB")));
 
-builder.Services.AddSingleton<IDatosService, DatosMemoriaService>();
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

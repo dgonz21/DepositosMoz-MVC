@@ -32,6 +32,12 @@ public class ProductoService : IProductoService
                 "El nombre del producto es obligatorio");
         }
 
+        if (string.IsNullOrWhiteSpace(producto.Descripcion))
+        {
+            throw new ArgumentException(
+                "La descripción del producto es obligatoria");
+        }
+
         if (producto.Precio <= 0)
         {
             throw new ArgumentException(
@@ -45,7 +51,7 @@ public class ProductoService : IProductoService
         }
 
         producto.Nombre = producto.Nombre.Trim();
-        producto.Descripcion = producto.Descripcion?.Trim();
+        producto.Descripcion = producto.Descripcion.Trim();
         producto.Activo = true;
 
         await _repositorioProducto.AgregarAsync(producto);
@@ -69,6 +75,12 @@ public class ProductoService : IProductoService
                 "El nombre del producto es obligatorio");
         }
 
+        if (string.IsNullOrWhiteSpace(producto.Descripcion))
+        {
+            throw new ArgumentException(
+                "La descripción del producto es obligatoria");
+        }
+
         if (producto.Precio <= 0)
         {
             throw new ArgumentException(
@@ -81,11 +93,17 @@ public class ProductoService : IProductoService
                 "El stock no puede ser negativo");
         }
 
-        productoExistente.Nombre = producto.Nombre.Trim();
+        productoExistente.Nombre =
+            producto.Nombre.Trim();
+
         productoExistente.Descripcion =
-            producto.Descripcion?.Trim();
-        productoExistente.Precio = producto.Precio;
-        productoExistente.Stock = producto.Stock;
+            producto.Descripcion.Trim();
+
+        productoExistente.Precio =
+            producto.Precio;
+
+        productoExistente.Stock =
+            producto.Stock;
 
         await _repositorioProducto.ActualizarAsync(
             productoExistente);

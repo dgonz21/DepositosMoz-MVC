@@ -9,4 +9,8 @@ public interface IProductoService
     Task<Producto?> ObtenerProductoPorIdAsync(int id);
 
     Task CrearProductoAsync(Producto producto);
+
+    Task<bool> ActualizarProductoAsync(Producto producto);
+
+    Task<bool> DesactivarProductoAsync(int id);
 }

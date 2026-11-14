@@ -10,6 +10,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<ConsultasMoz>();
 builder.Services.AddScoped(typeof(IRepositorio<>), typeof(Repositorio<>));
 builder.Services.AddScoped<IClienteService, ClienteService>();
+builder.Services.AddScoped<IProductoService, ProductoService>();
 builder.Services.AddDbContext<DepositosMozDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DepositosMozDB")));

@@ -1,4 +1,3 @@
-
 using System.ComponentModel.DataAnnotations;
 
 namespace DepositosMoz.Web.ViewModels;
@@ -9,8 +8,9 @@ public class ProductoCrearViewModel
     [StringLength(100)]
     public string Nombre { get; set; } = "";
 
-    [StringLength(250)]
-    public string? Descripcion { get; set; }
+    [Required(ErrorMessage = "La descripción del producto es obligatoria")]
+    [StringLength(200)]
+    public string Descripcion { get; set; } = "";
 
     [Range(typeof(decimal), "0.01", "999999.99",
         ErrorMessage = "El precio debe ser mayor que cero")]

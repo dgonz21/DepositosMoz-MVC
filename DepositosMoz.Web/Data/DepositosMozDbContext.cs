@@ -5,8 +5,11 @@ namespace DepositosMoz.Web.Data;
 
 public class DepositosMozDbContext : DbContext
 {
-    public DepositosMozDbContext(DbContextOptions<DepositosMozDbContext> options)
-        : base(options) { }
+    public DepositosMozDbContext(
+        DbContextOptions<DepositosMozDbContext> options)
+        : base(options)
+    {
+    }
 
     public DbSet<Cliente> Clientes => Set<Cliente>();
     public DbSet<Producto> Productos => Set<Producto>();
@@ -14,7 +17,8 @@ public class DepositosMozDbContext : DbContext
     public DbSet<DetallePedido> DetallesPedido => Set<DetallePedido>();
     public DbSet<EstadoPedido> EstadosPedido => Set<EstadoPedido>();
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    protected override void OnModelCreating(
+        ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
@@ -44,17 +48,33 @@ public class DepositosMozDbContext : DbContext
 
         modelBuilder.Entity<Producto>()
             .Property(p => p.Precio)
-            .HasPrecision(18, 2);
+            .HasPrecision(10, 2);
 
         modelBuilder.Entity<DetallePedido>()
             .Property(d => d.PrecioUnitario)
-            .HasPrecision(18, 2);
+            .HasPrecision(10, 2);
 
         modelBuilder.Entity<EstadoPedido>().HasData(
-            new EstadoPedido { Id = 1, Nombre = "Pendiente" },
-            new EstadoPedido { Id = 2, Nombre = "En proceso" },
-            new EstadoPedido { Id = 3, Nombre = "Entregado" },
-            new EstadoPedido { Id = 4, Nombre = "Cancelado" }
+            new EstadoPedido
+            {
+                Id = 1,
+                Nombre = "Pendiente"
+            },
+            new EstadoPedido
+            {
+                Id = 2,
+                Nombre = "En preparación"
+            },
+            new EstadoPedido
+            {
+                Id = 3,
+                Nombre = "Listo para entrega"
+            },
+            new EstadoPedido
+            {
+                Id = 4,
+                Nombre = "Entregado"
+            }
         );
     }
 }

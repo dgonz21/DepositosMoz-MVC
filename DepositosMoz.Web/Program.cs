@@ -1,8 +1,18 @@
-﻿using DepositosMoz.Web.Services;
+using DepositosMoz.Web.Queries;
+using DepositosMoz.Web.Repositories;
+using DepositosMoz.Web.Data;
+using Microsoft.EntityFrameworkCore;
+using DepositosMoz.Web.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<ConsultasMoz>();
+builder.Services.AddScoped(typeof(IRepositorio<>), typeof(Repositorio<>));
+builder.Services.AddDbContext<DepositosMozDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DepositosMozDB")));
+
 builder.Services.AddSingleton<IDatosService, DatosMemoriaService>();
 
 var app = builder.Build();
@@ -29,4 +39,7 @@ app.MapControllerRoute(
 
 
 app.Run();
+
+
+
 

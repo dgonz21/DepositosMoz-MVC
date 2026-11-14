@@ -1,4 +1,3 @@
-
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
@@ -19,10 +18,11 @@ public class Pedido
 
     public int EstadoPedidoId { get; set; } = 1;
 
-    [StringLength(500)]
+    [StringLength(250)]
     public string? Observaciones { get; set; }
 
     public List<DetallePedido> Detalles { get; set; } = new();
 
-    public decimal Total => Detalles.Sum(detalle => detalle.Subtotal);
+    public decimal Total =>
+        Detalles.Sum(detalle => detalle.Subtotal);
 }

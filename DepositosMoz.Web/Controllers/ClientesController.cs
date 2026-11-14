@@ -8,17 +8,17 @@ namespace DepositosMoz.Web.Controllers;
 [Route("Clientes")]
 public class ClientesController : Controller
 {
-    private readonly IDatosService _datosService;
+    private readonly IClienteService _clienteService;
 
-    public ClientesController(IDatosService datosService)
+    public ClientesController(IClienteService clienteService)
     {
-        _datosService = datosService;
+        _clienteService = clienteService;
     }
 
     [HttpGet("")]
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
-        var clientes = _datosService.ObtenerClientes();
+        var clientes = await _clienteService.ObtenerClientesAsync();
 
         return View(clientes);
     }
@@ -31,7 +31,7 @@ public class ClientesController : Controller
 
     [HttpPost("Crear")]
     [ValidateAntiForgeryToken]
-    public IActionResult Crear(ClienteCrearViewModel modelo)
+    public async Task<IActionResult> Crear(ClienteCrearViewModel modelo)    
     {
         if (!ModelState.IsValid)
         {
@@ -47,7 +47,7 @@ public class ClientesController : Controller
 
         try
         {
-            _datosService.AgregarCliente(cliente);
+            await _clienteService.CrearClienteAsync(cliente);        
         }
         catch (ArgumentException ex)
         {

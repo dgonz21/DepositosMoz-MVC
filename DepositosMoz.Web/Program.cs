@@ -5,15 +5,17 @@ using Microsoft.EntityFrameworkCore;
 using DepositosMoz.Web.Services;
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<ConsultasMoz>();
 builder.Services.AddScoped(typeof(IRepositorio<>), typeof(Repositorio<>));
+builder.Services.AddScoped<IClienteService, ClienteService>();
+builder.Services.AddScoped<IProductoService, ProductoService>();
+builder.Services.AddScoped<IPedidoService, PedidoService>();
+builder.Services.AddScoped<IUnidadTrabajo, UnidadTrabajo>();
 builder.Services.AddDbContext<DepositosMozDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DepositosMozDB")));
-
-builder.Services.AddSingleton<IDatosService, DatosMemoriaService>();
 
 var app = builder.Build();
 

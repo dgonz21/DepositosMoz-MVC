@@ -1,0 +1,35 @@
+name: Pruebas .NET
+
+on:
+  push:
+    branches:
+      - feature/etapa3-integracion-mvc
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restaurar dependencias
+        run: dotnet restore DepositosMoz.Tests/DepositosMoz.Tests.csproj
+
+      - name: Compilar solución
+        run: dotnet build DepositosMoz.Tests/DepositosMoz.Tests.csproj --no-restore --configuration Release
+
+      - name: Ejecutar pruebas
+        run: dotnet test DepositosMoz.Tests/DepositosMoz.Tests.csproj --no-build --configuration Release --verbosity normal

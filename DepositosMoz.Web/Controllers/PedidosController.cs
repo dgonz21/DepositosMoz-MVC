@@ -10,64 +10,76 @@ namespace DepositosMoz.Web.Controllers;
 [Route("Pedidos")]
 public class PedidosController : Controller
 {
-    private readonly IDatosService _datosService;
+private readonly IPedidoService _pedidoService;
+private readonly IClienteService _clienteService;
+private readonly IProductoService _productoService;
 
-    public PedidosController(IDatosService datosService)
-    {
-        _datosService = datosService;
-    }
+public PedidosController(
+    IPedidoService pedidoService,
+    IClienteService clienteService,
+    IProductoService productoService)
+{
+    _pedidoService = pedidoService;
+    _clienteService = clienteService;
+    _productoService = productoService;
+}
 
-    [HttpGet("")]
-    public IActionResult Index()
-    {
-        var pedidos = _datosService
-            .ObtenerPedidos()
-            .Select(pedido => new PedidoResumenDto
-            {
-                Id = pedido.Id,
+[HttpGet("")]
+public async Task<IActionResult> Index()
+{
+    var pedidos = await _pedidoService.ObtenerPedidosAsync();
+    var clientes = await _clienteService.ObtenerClientesAsync();
 
-                NombreCliente =
-                    _datosService
-                        .ObtenerClientePorId(pedido.ClienteId)?
-                        .Nombre
-                    ?? "Cliente no encontrado",
+    var clientesPorId = clientes.ToDictionary(
+        cliente => cliente.Id,
+        cliente => cliente.Nombre);
 
-                FechaEntrega = pedido.FechaEntrega,
+    var resumenPedidos = pedidos
+        .Select(pedido => new PedidoResumenDto
+        {
+            Id = pedido.Id,
 
-                Estado = ObtenerNombreEstado(
-                    pedido.EstadoPedidoId),
+            NombreCliente = clientesPorId.TryGetValue(
+                pedido.ClienteId,
+                out var nombreCliente)
+                ? nombreCliente
+                : "Cliente no encontrado",
 
-                Total = pedido.Total
-            })
-            .ToList();
+            FechaEntrega = pedido.FechaEntrega,
 
-        return View(pedidos);
-    }
+            Estado = ObtenerNombreEstado(
+                pedido.EstadoPedidoId),
 
-    [HttpGet("Crear")]
-    public IActionResult Crear()
-    {
-        CargarDatosFormulario();
+            Total = pedido.Total
+        })
+        .ToList();
 
-        var modelo = new PedidoCrearViewModel
+    return View(resumenPedidos);
+}
+    
+        [HttpGet("Crear")]
+        public async Task<IActionResult> Crear()
+        {
+            await CargarDatosFormularioAsync();
+
+            var modelo = new PedidoCrearViewModel
         {
             Detalles = new List<DetallePedidoCrearViewModel>
-            {
+        {
                 new DetallePedidoCrearViewModel()
-            }
-        };
+        }
+    };
 
-        return View(modelo);
-    }
+    return View(modelo);
+}
 
     [HttpPost("Crear")]
     [ValidateAntiForgeryToken]
-    public IActionResult Crear(PedidoCrearViewModel modelo)
+    public async Task<IActionResult> Crear(PedidoCrearViewModel modelo)
     {
         if (!ModelState.IsValid)
         {
-            CargarDatosFormulario();
-
+            await CargarDatosFormularioAsync();
             return View(modelo);
         }
 
@@ -88,7 +100,7 @@ public class PedidosController : Controller
 
         try
         {
-            _datosService.AgregarPedido(pedido);
+            await _pedidoService.CrearPedidoAsync(pedido);
         }
         catch (ArgumentException ex)
         {
@@ -96,8 +108,7 @@ public class PedidosController : Controller
                 string.Empty,
                 ex.Message);
 
-            CargarDatosFormulario();
-
+            await CargarDatosFormularioAsync();
             return View(modelo);
         }
 
@@ -179,32 +190,26 @@ public class PedidosController : Controller
             new { id });
     }
 
-    private void CargarDatosFormulario()
-    {
-        var clientes =
-            _datosService
-                .ObtenerClientes()
-                .Where(cliente => cliente.Activo)
-                .ToList();
+private async Task CargarDatosFormularioAsync()
+{
+    var clientes = (await _clienteService.ObtenerClientesAsync())
+        .Where(cliente => cliente.Activo)
+        .ToList();
 
-        var productos =
-            _datosService
-                .ObtenerProductos()
-                .Where(producto => producto.Activo)
-                .ToList();
+    var productos = (await _productoService.ObtenerProductosAsync())
+        .Where(producto => producto.Activo)
+        .ToList();
 
-        ViewBag.Clientes =
-            new SelectList(
-                clientes,
-                "Id",
-                "Nombre");
+    ViewBag.Clientes = new SelectList(
+        clientes,
+        "Id",
+        "Nombre");
 
-        ViewBag.Productos =
-            new SelectList(
-                productos,
-                "Id",
-                "Nombre");
-    }
+    ViewBag.Productos = new SelectList(
+        productos,
+        "Id",
+        "Nombre");
+}
 
     private static string ObtenerNombreEstado(
         int estadoId)

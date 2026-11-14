@@ -9,4 +9,8 @@ public interface IClienteService
     Task<Cliente?> ObtenerClientePorIdAsync(int id);
 
     Task CrearClienteAsync(Cliente cliente);
+
+    Task<bool> ActualizarClienteAsync(Cliente cliente);
+
+    Task<bool> DesactivarClienteAsync(int id);
 }

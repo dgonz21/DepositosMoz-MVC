@@ -1,0 +1,67 @@
+@model DepositosMoz.Web.ViewModels.ClienteEditarViewModel
+
+@{
+    ViewData["Title"] = "Editar cliente";
+}
+
+<h1>Editar cliente</h1>
+
+<form asp-action="Editar"
+      asp-route-id="@Model.Id"
+      method="post">
+
+    @Html.AntiForgeryToken()
+
+    <input asp-for="Id" type="hidden" />
+
+    <div asp-validation-summary="ModelOnly"
+         class="text-danger">
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Nombre"
+               class="form-label"></label>
+
+        <input asp-for="Nombre"
+               class="form-control" />
+
+        <span asp-validation-for="Nombre"
+              class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Telefono"
+               class="form-label"></label>
+
+        <input asp-for="Telefono"
+               class="form-control" />
+
+        <span asp-validation-for="Telefono"
+              class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Direccion"
+               class="form-label"></label>
+
+        <input asp-for="Direccion"
+               class="form-control" />
+
+        <span asp-validation-for="Direccion"
+              class="text-danger"></span>
+    </div>
+
+    <button type="submit"
+            class="btn btn-primary">
+        Guardar cambios
+    </button>
+
+    <a asp-action="Index"
+       class="btn btn-secondary">
+        Cancelar
+    </a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

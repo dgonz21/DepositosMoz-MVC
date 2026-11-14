@@ -8,17 +8,17 @@ namespace DepositosMoz.Web.Controllers;
 [Route("Productos")]
 public class ProductosController : Controller
 {
-    private readonly IDatosService _datosService;
+     private readonly IProductoService _productoService;
 
-    public ProductosController(IDatosService datosService)
+    public ProductosController(IProductoService productoService)
     {
-        _datosService = datosService;
+        _productoService = productoService;
     }
 
     [HttpGet("")]
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
-        var productos = _datosService.ObtenerProductos();
+        var productos = await _productoService.ObtenerProductosAsync();
 
         return View(productos);
     }
@@ -31,8 +31,8 @@ public class ProductosController : Controller
 
     [HttpPost("Crear")]
     [ValidateAntiForgeryToken]
-    public IActionResult Crear(ProductoCrearViewModel modelo)
-    {
+        public async Task<IActionResult> Crear(ProductoCrearViewModel modelo)   
+        {
         if (!ModelState.IsValid)
         {
             return View(modelo);
@@ -48,7 +48,7 @@ public class ProductosController : Controller
 
         try
         {
-            _datosService.AgregarProducto(producto);
+            await _productoService.CrearProductoAsync(producto);        
         }
         catch (ArgumentException ex)
         {

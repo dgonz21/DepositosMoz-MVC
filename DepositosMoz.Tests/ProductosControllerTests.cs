@@ -4,7 +4,9 @@ using DepositosMoz.Web.Models;
 using DepositosMoz.Web.Repositories;
 using DepositosMoz.Web.Services;
 using DepositosMoz.Web.ViewModels;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
@@ -262,6 +264,11 @@ public class ProductosControllerTests
         var controller =
             new ProductosController(servicio);
 
+        controller.TempData =
+            new TempDataDictionary(
+                new DefaultHttpContext(),
+                new TempDataProviderFalso());
+
         var resultado =
             await controller.Desactivar(
                 producto.Id);
@@ -277,5 +284,20 @@ public class ProductosControllerTests
 
         Assert.NotNull(desactivado);
         Assert.False(desactivado.Activo);
+    }
+
+    private class TempDataProviderFalso : ITempDataProvider
+    {
+        public IDictionary<string, object> LoadTempData(
+            HttpContext context)
+        {
+            return new Dictionary<string, object>();
+        }
+
+        public void SaveTempData(
+            HttpContext context,
+            IDictionary<string, object> values)
+        {
+        }
     }
 }

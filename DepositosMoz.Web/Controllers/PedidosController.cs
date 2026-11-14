@@ -117,19 +117,18 @@ public async Task<IActionResult> Index()
             new { id = pedido.Id });
     }
 
-    [HttpGet("Detalle/{id:int}")]
-    public IActionResult Detalle(int id)
+        [HttpGet("Detalle/{id:int}")]
+        public async Task<IActionResult> Detalle(int id)
     {
         var pedido =
-            _datosService.ObtenerPedidoPorId(id);
-
+        await _pedidoService.ObtenerPedidoPorIdAsync(id);
         if (pedido == null)
         {
             return NotFound();
         }
 
         var cliente =
-            _datosService.ObtenerClientePorId(
+                await _clienteService.ObtenerClientePorIdAsync(
                 pedido.ClienteId);
 
         ViewBag.Cliente = cliente;
@@ -141,77 +140,73 @@ public async Task<IActionResult> Index()
         ViewBag.Estados =
             ObtenerEstados();
 
+        var productos =
+        await _productoService.ObtenerProductosAsync();
+
         ViewBag.Productos =
-            _datosService
-                .ObtenerProductos()
-                .ToDictionary(
-                    producto => producto.Id,
-                    producto => producto.Nombre);
+        productos.ToDictionary(
+        producto => producto.Id,
+        producto => producto.Nombre);
 
         return View(pedido);
     }
-
-    [HttpPost("CambiarEstado/{id:int}")]
-    [ValidateAntiForgeryToken]
-    public IActionResult CambiarEstado(
+        [HttpPost("CambiarEstado/{id:int}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CambiarEstado(
         int id,
         int estadoId)
     {
         var pedido =
-            _datosService.ObtenerPedidoPorId(id);
+        await _pedidoService.ObtenerPedidoPorIdAsync(id);
 
         if (pedido == null)
-        {
-            return NotFound();
-        }
-
-        if (estadoId < 1 || estadoId > 4)
-        {
-            return BadRequest(
-                "El estado seleccionado no es válido.");
-        }
-
-        var actualizado =
-            _datosService.CambiarEstadoPedido(
-                id,
-                estadoId);
-
-        if (!actualizado)
-        {
-            return BadRequest(
-                "No fue posible actualizar el estado del pedido.");
-        }
-
-        TempData["Mensaje"] =
-            "El estado del pedido fue actualizado correctamente.";
-
-        return RedirectToAction(
-            nameof(Detalle),
-            new { id });
+    {
+        return NotFound();
     }
 
-private async Task CargarDatosFormularioAsync()
+        if (estadoId < 1 || estadoId > 4)
+    {
+            return BadRequest(
+            "El estado seleccionado no es válido.");
+    }
+
+            var actualizado =
+            await _pedidoService.CambiarEstadoPedidoAsync(id, estadoId);
+
+        if (!actualizado)
+    {
+        return BadRequest(
+            "No fue posible actualizar el estado del pedido.");
+    }
+
+        TempData["Mensaje"] = "El estado del pedido fue actualizado correctamente.";
+
+        return RedirectToAction(
+        nameof(Detalle),
+        new { id });
+}
+        private async Task CargarDatosFormularioAsync()
 {
-    var clientes = (await _clienteService.ObtenerClientesAsync())
+        var clientes = (await _clienteService.ObtenerClientesAsync())
         .Where(cliente => cliente.Activo)
         .ToList();
 
-    var productos = (await _productoService.ObtenerProductosAsync())
+        var productos = (await _productoService.ObtenerProductosAsync())
         .Where(producto => producto.Activo)
         .ToList();
 
-    ViewBag.Clientes = new SelectList(
+        ViewBag.Clientes = new SelectList(
         clientes,
         "Id",
         "Nombre");
 
-    ViewBag.Productos = new SelectList(
+        ViewBag.Productos = new SelectList(
         productos,
         "Id",
         "Nombre");
 }
 
-    private static string ObtenerNombreEstado(
+        private static string ObtenerNombreEstado(
         int estadoId)
     {
         return estadoId switch

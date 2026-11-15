@@ -7,7 +7,8 @@ public class ClienteService : IClienteService
 {
     private readonly IRepositorio<Cliente> _repositorioCliente;
 
-    public ClienteService(IRepositorio<Cliente> repositorioCliente)
+    public ClienteService(
+        IRepositorio<Cliente> repositorioCliente)
     {
         _repositorioCliente = repositorioCliente;
     }
@@ -44,39 +45,92 @@ public class ClienteService : IClienteService
                 "La dirección del cliente es obligatoria");
         }
 
-        cliente.Nombre = cliente.Nombre.Trim();
-        cliente.Telefono = cliente.Telefono.Trim();
-        cliente.Direccion = cliente.Direccion.Trim();
+        var telefono =
+            cliente.Telefono.Trim();
+
+        var clientesConMismoTelefono =
+            await _repositorioCliente.FiltrarAsync(
+                c => c.Telefono == telefono);
+
+        if (clientesConMismoTelefono.Any())
+        {
+            throw new ArgumentException(
+                "Ya existe un cliente registrado con este número de teléfono");
+        }
+
+        cliente.Nombre =
+            cliente.Nombre.Trim();
+
+        cliente.Telefono =
+            telefono;
+
+        cliente.Direccion =
+            cliente.Direccion.Trim();
+
         cliente.Activo = true;
 
-        await _repositorioCliente.AgregarAsync(cliente);
+        await _repositorioCliente.AgregarAsync(
+            cliente);
     }
 
-    public async Task<bool> ActualizarClienteAsync(Cliente cliente)
+    public async Task<bool> ActualizarClienteAsync(
+        Cliente cliente)
     {
         ArgumentNullException.ThrowIfNull(cliente);
 
         var clienteExistente =
-            await _repositorioCliente.ObtenerPorIdAsync(cliente.Id);
+            await _repositorioCliente.ObtenerPorIdAsync(
+                cliente.Id);
 
         if (clienteExistente == null)
         {
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(cliente.Nombre) ||
-            string.IsNullOrWhiteSpace(cliente.Telefono) ||
-            string.IsNullOrWhiteSpace(cliente.Direccion))
+        if (string.IsNullOrWhiteSpace(cliente.Nombre))
         {
             throw new ArgumentException(
-                "Todos los datos del cliente son obligatorios");
+                "El nombre del cliente es obligatorio");
         }
 
-        clienteExistente.Nombre = cliente.Nombre.Trim();
-        clienteExistente.Telefono = cliente.Telefono.Trim();
-        clienteExistente.Direccion = cliente.Direccion.Trim();
+        if (string.IsNullOrWhiteSpace(cliente.Telefono))
+        {
+            throw new ArgumentException(
+                "El teléfono del cliente es obligatorio");
+        }
 
-        await _repositorioCliente.ActualizarAsync(clienteExistente);
+        if (string.IsNullOrWhiteSpace(cliente.Direccion))
+        {
+            throw new ArgumentException(
+                "La dirección del cliente es obligatoria");
+        }
+
+        var telefono =
+            cliente.Telefono.Trim();
+
+        var clientesConMismoTelefono =
+            await _repositorioCliente.FiltrarAsync(
+                c =>
+                    c.Telefono == telefono &&
+                    c.Id != cliente.Id);
+
+        if (clientesConMismoTelefono.Any())
+        {
+            throw new ArgumentException(
+                "Ya existe otro cliente registrado con este número de teléfono");
+        }
+
+        clienteExistente.Nombre =
+            cliente.Nombre.Trim();
+
+        clienteExistente.Telefono =
+            telefono;
+
+        clienteExistente.Direccion =
+            cliente.Direccion.Trim();
+
+        await _repositorioCliente.ActualizarAsync(
+            clienteExistente);
 
         return true;
     }
@@ -93,7 +147,8 @@ public class ClienteService : IClienteService
 
         cliente.Activo = false;
 
-        await _repositorioCliente.ActualizarAsync(cliente);
+        await _repositorioCliente.ActualizarAsync(
+            cliente);
 
         return true;
     }

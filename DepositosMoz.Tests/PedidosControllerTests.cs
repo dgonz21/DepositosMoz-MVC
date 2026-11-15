@@ -148,6 +148,156 @@ public class PedidosControllerTests
         Assert.Equal(
             producto.Precio,
             pedido.Detalles[0].PrecioUnitario);
+
+        db.ChangeTracker.Clear();
+
+        var productoActualizado =
+            await db.Productos
+                .AsNoTracking()
+                .FirstAsync(
+                    p => p.Id == producto.Id);
+
+        Assert.Equal(
+            18,
+            productoActualizado.Stock);
+    }
+
+    [Fact]
+    public async Task Crear_Post_StockAgotado_RechazaSegundoPedido()
+    {
+        using var conexion =
+            new SqliteConnection("Data Source=:memory:");
+
+        await conexion.OpenAsync();
+
+        var opciones =
+            new DbContextOptionsBuilder<DepositosMozDbContext>()
+                .UseSqlite(conexion)
+                .Options;
+
+        await using var db =
+            new DepositosMozDbContext(opciones);
+
+        await db.Database.EnsureCreatedAsync();
+
+        var clienteUno =
+            await CrearClienteAsync(db);
+
+        var clienteDos = new Cliente
+        {
+            Nombre = "Segundo cliente",
+            Telefono = "7777-8888",
+            Direccion = "Santa Tecla",
+            Activo = true
+        };
+
+        db.Clientes.Add(clienteDos);
+        await db.SaveChangesAsync();
+
+        var producto =
+            await CrearProductoAsync(db);
+
+        producto.Stock = 1;
+
+        db.Productos.Update(producto);
+        await db.SaveChangesAsync();
+
+        var controller = CrearController(db);
+
+        var primerPedido =
+            new PedidoCrearViewModel
+            {
+                ClienteId = clienteUno.Id,
+                FechaEntrega =
+                    DateTime.Today.AddDays(1),
+
+                Observaciones =
+                    "Primer pedido",
+
+                Detalles =
+                    new List<DetallePedidoCrearViewModel>
+                    {
+                        new DetallePedidoCrearViewModel
+                        {
+                            ProductoId =
+                                producto.Id,
+
+                            Cantidad = 1
+                        }
+                    }
+            };
+
+        var resultadoPrimerPedido =
+            await controller.Crear(
+                primerPedido);
+
+        Assert.IsType<RedirectToActionResult>(
+            resultadoPrimerPedido);
+
+        db.ChangeTracker.Clear();
+
+        var productoSinStock =
+            await db.Productos
+                .AsNoTracking()
+                .FirstAsync(
+                    p => p.Id == producto.Id);
+
+        Assert.Equal(
+            0,
+            productoSinStock.Stock);
+
+        var segundoPedido =
+            new PedidoCrearViewModel
+            {
+                ClienteId = clienteDos.Id,
+                FechaEntrega =
+                    DateTime.Today.AddDays(1),
+
+                Observaciones =
+                    "Segundo pedido",
+
+                Detalles =
+                    new List<DetallePedidoCrearViewModel>
+                    {
+                        new DetallePedidoCrearViewModel
+                        {
+                            ProductoId =
+                                producto.Id,
+
+                            Cantidad = 1
+                        }
+                    }
+            };
+
+        var resultadoSegundoPedido =
+            await controller.Crear(
+                segundoPedido);
+
+        Assert.IsType<ViewResult>(
+            resultadoSegundoPedido);
+
+        Assert.False(
+            controller.ModelState.IsValid);
+
+        var cantidadPedidos =
+            await db.Pedidos.CountAsync();
+
+        Assert.Equal(
+            1,
+            cantidadPedidos);
+
+        var stockFinal =
+            await db.Productos
+                .AsNoTracking()
+                .Where(
+                    p => p.Id == producto.Id)
+                .Select(
+                    p => p.Stock)
+                .FirstAsync();
+
+        Assert.Equal(
+            0,
+            stockFinal);
     }
 
     [Fact]
@@ -222,7 +372,8 @@ public class PedidosControllerTests
         var controller = CrearController(db);
 
         var resultado =
-            await controller.Detalle(pedido.Id);
+            await controller.Detalle(
+                pedido.Id);
 
         var vista =
             Assert.IsType<ViewResult>(
@@ -236,7 +387,8 @@ public class PedidosControllerTests
             pedido.Id,
             modelo.Id);
 
-        Assert.Single(modelo.Detalles);
+        Assert.Single(
+            modelo.Detalles);
     }
 
     [Fact]
@@ -260,7 +412,8 @@ public class PedidosControllerTests
         var controller = CrearController(db);
 
         var resultado =
-            await controller.Detalle(99999);
+            await controller.Detalle(
+                99999);
 
         Assert.IsType<NotFoundResult>(
             resultado);
@@ -361,7 +514,8 @@ public class PedidosControllerTests
                 cliente,
                 producto);
 
-        var controller = CrearController(db);
+        var controller =
+            CrearController(db);
 
         var resultado =
             await controller.CambiarEstado(
@@ -395,12 +549,16 @@ public class PedidosControllerTests
         var consultas =
             new ConsultasMoz(db);
 
+        var unidadTrabajo =
+            new UnidadTrabajo(db);
+
         var pedidoService =
             new PedidoService(
                 repositorioPedido,
                 consultas,
                 clienteService,
-                productoService);
+                productoService,
+                unidadTrabajo);
 
         return new PedidosController(
             pedidoService,
@@ -422,7 +580,8 @@ public class PedidosControllerTests
             Activo = true
         };
 
-        await repositorio.AgregarAsync(cliente);
+        await repositorio.AgregarAsync(
+            cliente);
 
         return cliente;
     }
@@ -436,13 +595,15 @@ public class PedidosControllerTests
         var producto = new Producto
         {
             Nombre = "Producto prueba",
-            Descripcion = "Producto para pruebas",
+            Descripcion =
+                "Producto para pruebas",
             Precio = 2.50m,
             Stock = 20,
             Activo = true
         };
 
-        await repositorio.AgregarAsync(producto);
+        await repositorio.AgregarAsync(
+            producto);
 
         return producto;
     }
@@ -472,27 +633,37 @@ public class PedidosControllerTests
         var consultas =
             new ConsultasMoz(db);
 
+        var unidadTrabajo =
+            new UnidadTrabajo(db);
+
         var pedidoService =
             new PedidoService(
                 repositorioPedido,
                 consultas,
                 clienteService,
-                productoService);
+                productoService,
+                unidadTrabajo);
 
         var pedido = new Pedido
         {
             ClienteId = cliente.Id,
-            FechaEntrega = DateTime.Today.AddDays(1),
-            Observaciones = "Pedido para pruebas",
+            FechaEntrega =
+                DateTime.Today.AddDays(1),
 
-            Detalles = new List<DetallePedido>
-            {
-                new DetallePedido
+            Observaciones =
+                "Pedido para pruebas",
+
+            Detalles =
+                new List<DetallePedido>
                 {
-                    ProductoId = producto.Id,
-                    Cantidad = 2
+                    new DetallePedido
+                    {
+                        ProductoId =
+                            producto.Id,
+
+                        Cantidad = 2
+                    }
                 }
-            }
         };
 
         await pedidoService.CrearPedidoAsync(
